@@ -35,6 +35,8 @@ class SigningScreenState extends State<SigningScreen> {
     myController.dispose();
     super.dispose();
   }
+  String txInfo = "";
+  String buttonLabel = 'Submit';
 
   @override
   Widget build(context) {
@@ -100,20 +102,69 @@ class SigningScreenState extends State<SigningScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 16.0),
                               child: ElevatedButton(
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Sending transaction...')),
-                                  );
-                                  print("Sending " + myController.text);
-                                  // Validate returns true if the form is valid, or false otherwise.
-                                  if (_formKey.currentState!.validate()) {
-                                    // If the form is valid, display a snackbar. In the real world,
-                                    // you'd often call a server or save the information in a database.
+                                  txInfo = '';
+                                  setState(() {
+                                    txInfo = txInfo;
+                                  });
+                                  if(buttonLabel == "Submit"){
+                                    // Validate returns true if the form is valid, or false otherwise.
+                                    if (_formKey.currentState!.validate()) {
+                                      // If the form is valid, display a snackbar. In the real world,
+                                      // you'd often call a server or save the information in a database.
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Requesting info...')),
+                                      );
+                                      liquidOracle.getDecodedTx(myController.text).then((value) {
+                                        txInfo = value;
+                                        setState(() {
+                                          txInfo = txInfo;
+                                          buttonLabel = "Sign";
+                                        });
+                                      }).catchError((_){
+                                        txInfo = 'An error occurred';
+                                        setState(() {
+                                          txInfo = txInfo;
+                                        });
+                                      });
+                                    }
+                                  } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Getting signed TX...')),
+                                      const SnackBar(content: Text('Sending transaction...')),
                                     );
+                                    liquidOracle.getSignedTx(myController.text).then((value) {
+                                      txInfo = value;
+                                      setState(() {
+                                        txInfo = txInfo;
+                                        buttonLabel = "Sign";
+                                      });
+                                    }).catchError((_){
+                                      txInfo = 'An error occurred';
+                                      setState(() {
+                                        txInfo = txInfo;
+                                      });
+                                    });
                                   }
                                 },
-                                child: const Text('Submit'),
+                                child: Text(buttonLabel),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Clipboard.setData(ClipboardData(text: txInfo)).then((_){
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Data has been copied into clipboard"))
+                                  );
+                                });
+                              },
+                              child: Text(
+                                txInfo,
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.black),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 10,
+                                textAlign: TextAlign.left,
                               ),
                             ),
                           ],

@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:montelibero/models/chain_info.dart';
+import 'package:montelibero/models/decoded_tx.dart';
 import 'package:montelibero/models/wallet_info.dart';
 import 'package:montelibero/models/currency.dart';
 import 'package:montelibero/models/price_list_bitcoin.dart';
@@ -85,6 +86,31 @@ class LiquidOracle extends ChangeNotifier {
     } catch (err) {
       print("Error requesting getaddressesbylabel " + err.toString());
       return Future.value("");
+    }
+  }
+
+  Future<String> getDecodedTx(String tx) async {
+    var response = null;
+    try {
+      response =
+      await rpc.call("decoderawtransaction", params: [tx]);
+      final txInfo = DecodedTx.fromJson(response.result);
+      return Future.value(txInfo.stringInfo);
+    } catch (err) {
+      print("Error requesting decoderawtransaction " + err.toString());
+      return Future.value(err.toString());
+    }
+  }
+
+  Future<String> getSignedTx(String tx) async {
+    var response = null;
+    try {
+      response = await rpc.call("signrawtransactionwithwallet", params: [tx]);
+      final signedTx = response.result as Map<String, dynamic>;
+      return Future.value(signedTx["hex"]);
+    } catch (err) {
+      print("Error requesting signrawtransactionwithwallet " + err.toString());
+      return Future.value(err.toString());
     }
   }
 }
