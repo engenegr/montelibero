@@ -102,14 +102,21 @@ class LiquidOracle extends ChangeNotifier {
     }
   }
 
-  Future<String> getSignedTx(String tx) async {
+  Future<String> getSignedTx(String tx, String key) async {
     var response = null;
     try {
-      response = await rpc.call("signrawtransactionwithwallet", params: [tx]);
-      final signedTx = response.result as Map<String, dynamic>;
-      return Future.value(signedTx["hex"]);
+      if(key.isEmpty) {
+        response = await rpc.call("signrawtransactionwithwallet", params: [tx]);
+        final signedTx = response.result as Map<String, dynamic>;
+        return Future.value(signedTx["hex"]);
+      } else {
+        response = await rpc.call("signrawtransactionwithkey",
+            params: [tx, [key]]);
+        final signedTx = response.result as Map<String, dynamic>;
+        return Future.value(signedTx["hex"]);
+      }
     } catch (err) {
-      print("Error requesting signrawtransactionwithwallet " + err.toString());
+      print("Error while requesting signing " + err.toString());
       return Future.value(err.toString());
     }
   }

@@ -27,12 +27,14 @@ class SigningScreenState extends State<SigningScreen> {
   // not a GlobalKey<MyCustomFormState>.
   final _formKey = GlobalKey<FormState>();
 
-  final myController = TextEditingController();
+  final txController = TextEditingController();
+  final keyController = TextEditingController();
 
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
-    myController.dispose();
+    txController.dispose();
+    keyController.dispose();
     super.dispose();
   }
   String txInfo = "";
@@ -89,12 +91,35 @@ class SigningScreenState extends State<SigningScreen> {
                                 border: OutlineInputBorder(),
                                 hintText: 'Enter raw transaction here',
                               ),
-                              controller: myController,
+                              controller: txController,
                               // The validator receives the text that the user has entered.
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please, enter transaction';
                                 }
+                                return null;
+                              },
+                            ),
+                            const Divider(
+                              height: 30,
+                              thickness: 2,
+                              indent: 20,
+                              endIndent: 20,
+                              color: Colors.black,
+                            ),
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                hintText: 'Enter signing key here (Optional)',
+                              ),
+                              controller: keyController,
+                              // The validator receives the text that the user has entered.
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return null;
+                                }
+                                setState(() {
+                                  buttonLabel = "Submit With Key";
+                                });
                                 return null;
                               },
                             ),
@@ -114,7 +139,7 @@ class SigningScreenState extends State<SigningScreen> {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('Requesting info...')),
                                       );
-                                      liquidOracle.getDecodedTx(myController.text).then((value) {
+                                      liquidOracle.getDecodedTx(txController.text).then((value) {
                                         txInfo = value;
                                         setState(() {
                                           txInfo = txInfo;
@@ -127,11 +152,34 @@ class SigningScreenState extends State<SigningScreen> {
                                         });
                                       });
                                     }
-                                  } else {
+                                  };
+                                  if(buttonLabel == "Submit With Key"){
+                                    // Validate returns true if the form is valid, or false otherwise.
+                                    if (_formKey.currentState!.validate()) {
+                                      // If the form is valid, display a snackbar. In the real world,
+                                      // you'd often call a server or save the information in a database.
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Requesting info...')),
+                                      );
+                                      liquidOracle.getDecodedTx(txController.text).then((value) {
+                                        txInfo = value;
+                                        setState(() {
+                                          txInfo = txInfo;
+                                          buttonLabel = "Sign With Key";
+                                        });
+                                      }).catchError((_){
+                                        txInfo = 'An error occurred';
+                                        setState(() {
+                                          txInfo = txInfo;
+                                        });
+                                      });
+                                    }
+                                  };
+                                  if(buttonLabel == "Sign"){
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text('Sending transaction...')),
                                     );
-                                    liquidOracle.getSignedTx(myController.text).then((value) {
+                                    liquidOracle.getSignedTx(txController.text, "").then((value) {
                                       txInfo = value;
                                       setState(() {
                                         txInfo = txInfo;
@@ -143,7 +191,24 @@ class SigningScreenState extends State<SigningScreen> {
                                         txInfo = txInfo;
                                       });
                                     });
-                                  }
+                                  };
+                                  if(buttonLabel == "Sign With Key"){
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Sending transaction...')),
+                                    );
+                                    liquidOracle.getSignedTx(txController.text, keyController.text).then((value) {
+                                      txInfo = value;
+                                      setState(() {
+                                        txInfo = txInfo;
+                                        buttonLabel = "Sign";
+                                      });
+                                    }).catchError((_){
+                                      txInfo = 'An error occurred';
+                                      setState(() {
+                                        txInfo = txInfo;
+                                      });
+                                    });
+                                  };
                                 },
                                 child: Text(buttonLabel),
                               ),

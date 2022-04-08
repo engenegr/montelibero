@@ -50,7 +50,7 @@ class BitcoinPriceProvider extends ChangeNotifier {
     final decodeData = json.decode(response.body);
 
     await decodeData['bpi'].forEach((k, v) {
-      prices.add(PriceListBitcoinDates(date: k, price: v));
+      prices.add(PriceListBitcoinDates(date: k, price: v.toDouble()));
     });
     prices = prices.reversed.toList();
     notifyListeners();
