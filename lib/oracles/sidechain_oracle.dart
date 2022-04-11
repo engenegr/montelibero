@@ -149,4 +149,16 @@ class LiquidOracle extends ChangeNotifier {
       return Future.value(err.toString());
     }
   }
+
+  Future<String> createRawTx(String dest, String amount) async {
+    var response = null;
+    try {
+      response =
+      await rpc.call("createrawtransaction", params: [[],[{dest: amount}]]);
+      return Future.value(response.result.toString());
+    } catch (err) {
+      print("Error requesting createrawtransaction " + err.toString());
+      return Future.value(err.toString());
+    }
+  }
 }

@@ -71,10 +71,11 @@ class ConstructScreenState extends State<ConstructScreen> {
                         hintText: 'Enter address',
                       ),
                       controller: addressInput,
-                      // The validator receives the text that the user has entered.
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Can not be empty';
+                        } else {
+                          // Here put address validation logic
                         }
                         return null;
                       },
@@ -94,6 +95,12 @@ class ConstructScreenState extends State<ConstructScreen> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Can not be empty';
+                        } else {
+                          try {
+                            double.parse(value);
+                          } catch(err) {
+                            return err.toString();
+                          }
                         }
                         return null;
                       },
@@ -140,8 +147,14 @@ class ConstructScreenState extends State<ConstructScreen> {
                                   const SnackBar(content: Text('Check your transaction')),
                                 );
                               }
-                              setState(() {
-                                txInfo = txInfo;
+                              liquidOracle.createRawTx(addressInput.text, amountInput.text).then((value) {
+                                setState(() {
+                                  txInfo = 'Received transaction\n' + value;
+                                });
+                              }).catchError((_){
+                                setState(() {
+                                  txInfo = 'An error occurred while requesting raw tx';
+                                });
                               });
                             },
                             child: const Text("Prepare"),
