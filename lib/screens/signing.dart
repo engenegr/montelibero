@@ -37,8 +37,8 @@ class SigningScreenState extends State<SigningScreen> {
     keyController.dispose();
     super.dispose();
   }
+
   String txInfo = "";
-  String buttonLabel = 'Submit';
 
   @override
   Widget build(context) {
@@ -89,7 +89,7 @@ class SigningScreenState extends State<SigningScreen> {
                             TextFormField(
                               decoration: const InputDecoration(
                                 border: OutlineInputBorder(),
-                                hintText: 'Enter raw transaction here',
+                                hintText: 'Enter raw transaction / blinded tx id here',
                               ),
                               controller: txController,
                               // The validator receives the text that the user has entered.
@@ -112,105 +112,114 @@ class SigningScreenState extends State<SigningScreen> {
                                 hintText: 'Enter signing key here (Optional)',
                               ),
                               controller: keyController,
-                              // The validator receives the text that the user has entered.
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return null;
-                                }
-                                setState(() {
-                                  buttonLabel = "Submit With Key";
-                                });
-                                return null;
-                              },
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  txInfo = '';
-                                  setState(() {
-                                    txInfo = txInfo;
-                                  });
-                                  if(buttonLabel == "Submit"){
-                                    // Validate returns true if the form is valid, or false otherwise.
-                                    if (_formKey.currentState!.validate()) {
-                                      // If the form is valid, display a snackbar. In the real world,
-                                      // you'd often call a server or save the information in a database.
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Requesting info...')),
-                                      );
-                                      liquidOracle.getDecodedTx(txController.text).then((value) {
-                                        txInfo = value;
-                                        setState(() {
-                                          txInfo = txInfo;
-                                          buttonLabel = "Sign";
-                                        });
-                                      }).catchError((_){
-                                        txInfo = 'An error occurred';
+                              child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        txInfo = '';
                                         setState(() {
                                           txInfo = txInfo;
                                         });
-                                      });
-                                    }
-                                  };
-                                  if(buttonLabel == "Submit With Key"){
-                                    // Validate returns true if the form is valid, or false otherwise.
-                                    if (_formKey.currentState!.validate()) {
-                                      // If the form is valid, display a snackbar. In the real world,
-                                      // you'd often call a server or save the information in a database.
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Requesting info...')),
-                                      );
-                                      liquidOracle.getDecodedTx(txController.text).then((value) {
-                                        txInfo = value;
-                                        setState(() {
-                                          txInfo = txInfo;
-                                          buttonLabel = "Sign With Key";
+                                        if (_formKey.currentState!.validate()) {
+                                          // If the form is valid, display a snackbar. In the real world,
+                                          // you'd often call a server or save the information in a database.
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Requesting info...')),
+                                          );
+                                          liquidOracle.getDecodedTx(txController.text).then((value) {
+                                            txInfo = value;
+                                            setState(() {
+                                              txInfo = txInfo;
+                                            });
+                                          }).catchError((_){
+                                            txInfo = 'An error occurred';
+                                            setState(() {
+                                              txInfo = txInfo;
+                                            });
+                                          });
+                                        }
+                                      },
+                                      child: const Text("Decode"),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        liquidOracle.getRawTx(txController.text).then((value) {
+                                          setState(() {
+                                            txController.text = value;
+                                            txInfo = 'Received transaction. Press Unblind next';
+                                          });
+                                        }).catchError((_){
+                                          setState(() {
+                                            txController.text = "";
+                                            txInfo = 'An error occurred while requesting raw tx';
+                                          });
                                         });
-                                      }).catchError((_){
-                                        txInfo = 'An error occurred';
-                                        setState(() {
-                                          txInfo = txInfo;
+                                      },
+                                      child: const Text("Get Transaction"),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        if(txController.text == "") {
+                                          setState(() {
+                                            txInfo = 'Not transaction found in corresponding field';
+                                          });
+                                          return;
+                                        }
+                                        liquidOracle.unblindRawTx(txController.text).then((value) {
+                                          setState(() {
+                                            txController.text = value;
+                                            txInfo = 'Unblinded';
+                                          });
+                                        }).catchError((_){
+                                          txInfo = 'An error occurred while unblinding';
+                                          setState(() {
+                                            txController.text = "";
+                                          });
                                         });
-                                      });
-                                    }
-                                  };
-                                  if(buttonLabel == "Sign"){
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Sending transaction...')),
-                                    );
-                                    liquidOracle.getSignedTx(txController.text, "").then((value) {
-                                      txInfo = value;
-                                      setState(() {
-                                        txInfo = txInfo;
-                                        buttonLabel = "Sign";
-                                      });
-                                    }).catchError((_){
-                                      txInfo = 'An error occurred';
-                                      setState(() {
-                                        txInfo = txInfo;
-                                      });
-                                    });
-                                  };
-                                  if(buttonLabel == "Sign With Key"){
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Sending transaction...')),
-                                    );
-                                    liquidOracle.getSignedTx(txController.text, keyController.text).then((value) {
-                                      txInfo = value;
-                                      setState(() {
-                                        txInfo = txInfo;
-                                        buttonLabel = "Sign";
-                                      });
-                                    }).catchError((_){
-                                      txInfo = 'An error occurred';
-                                      setState(() {
-                                        txInfo = txInfo;
-                                      });
-                                    });
-                                  };
-                                },
-                                child: Text(buttonLabel),
+                                      },
+                                      child: const Text("Unblind"),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        if(txController.text == "") {
+                                          setState(() {
+                                            txInfo = 'Not transaction found in corresponding field';
+                                          });
+                                          return;
+                                        }
+                                        if (_formKey.currentState!.validate()) {
+                                          liquidOracle.getSignedTx(txController.text, "").then((value) {
+                                            txInfo = value;
+                                            setState(() {
+                                              txInfo = txInfo;
+                                            });
+                                          }).catchError((_){
+                                            txInfo = 'An error occurred';
+                                            setState(() {
+                                              txInfo = txInfo;
+                                            });
+                                          });
+                                        } else {
+                                          liquidOracle.getSignedTx(txController.text, keyController.text).then((value) {
+                                            txInfo = value;
+                                            setState(() {
+                                              txInfo = txInfo;
+                                            });
+                                          }).catchError((_){
+                                            txInfo = 'An error occurred';
+                                            setState(() {
+                                              txInfo = txInfo;
+                                            });
+                                          });
+                                        }
+                                      },
+                                      child: const Text("Sign"),
+                                    ),
+                                  ],
                               ),
                             ),
                             GestureDetector(

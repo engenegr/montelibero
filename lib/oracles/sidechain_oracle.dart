@@ -13,6 +13,8 @@ import 'package:jsonrpc_client/jsonrpc_client.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+import '../models/tx.dart';
+
 class LiquidOracle extends ChangeNotifier {
   final rpc = Client.withBasicAuth(
       GlobalConfiguration().getValue("uri"),
@@ -88,6 +90,33 @@ class LiquidOracle extends ChangeNotifier {
       return Future.value("");
     }
   }
+
+  Future<String> getRawTx(String txId) async {
+    var response = null;
+    try {
+      response =
+      await rpc.call("gettransaction", params: [txId]);
+      final tx = RawTx.fromJson(response.result);
+      return Future.value(tx.hex);
+    } catch (err) {
+      print("Error requesting gettransaction " + err.toString());
+      return Future.value(err.toString());
+    }
+  }
+
+  Future<String> unblindRawTx(String blindedHex) async {
+    var response = null;
+    try {
+      response =
+      await rpc.call("unblindrawtransaction", params: [blindedHex]);
+      final unblindedTx = UnblindedTx.fromJson(response.result);
+      return Future.value(unblindedTx.hex);
+    } catch (err) {
+      print("Error requesting gettransaction " + err.toString());
+      return Future.value(err.toString());
+    }
+  }
+
 
   Future<String> getDecodedTx(String tx) async {
     var response = null;
