@@ -4,12 +4,40 @@ import 'package:flutter/material.dart';
 import 'package:montelibero/oracles/sidechain_oracle.dart';
 import 'package:provider/provider.dart';
 import 'package:montelibero/models/chain_info.dart';
+import 'package:global_configuration/global_configuration.dart';
 
-class SettingsScreen extends StatelessWidget {
+// Create a Form widget.
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({Key? key}) : super(key: key);
+
+  @override
+  SettingsScreenState createState() {
+    return SettingsScreenState();
+  }
+}
+
+
+class SettingsScreenState extends State<SettingsScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final hostInput = TextEditingController();
+  final portInput = TextEditingController();
+  final userInput = TextEditingController();
+  final passwordInput = TextEditingController();
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    hostInput.dispose();
+    portInput.dispose();
+    userInput.dispose();
+    passwordInput.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final liquidOracle = Provider.of<LiquidOracle>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -35,22 +63,69 @@ class SettingsScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _CardParameter(
-                    name: "node uri",
-                    value: "http://some",
-                  ),
-                  _CardParameter(
-                    name: "user",
-                    value: "user",
-                  ),
-                  _CardParameter(
-                    name: "password",
-                    value: "password",
-                  ),
-                ],
+              TextFormField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: GlobalConfiguration().get("host") ?? "http://host:port",
+                  labelText: "host",
+                ),
+                controller: hostInput,
+                // The validator receives the text that the user has entered.
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please, enter correct URI';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: (GlobalConfiguration().get("port") ?? 18333).toString(),
+                  labelText: "port",
+                ),
+                controller: portInput,
+                // The validator receives the text that the user has entered.
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please, check host and enter correct port';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: GlobalConfiguration().get("user") ?? "user",
+                  labelText: "api credentials",
+                ),
+                controller: userInput,
+                // The validator receives the text that the user has entered.
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please, enter correct user';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                obscureText: true,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: GlobalConfiguration().get("password") ?? "password",
+                  labelText: "api credentials",
+                ),
+                controller: passwordInput,
+                // The validator receives the text that the user has entered.
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please, check user and enter correct password';
+                  }
+                  return null;
+                },
               ),
             ],
           ),

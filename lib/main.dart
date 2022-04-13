@@ -20,7 +20,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 Map<String, dynamic> appSettings = {
-  "uri": "http://127.0.0.1",
+  "host": "http://127.0.0.1",
   "port": 18891,
   "user": "user",
   "password": "password"

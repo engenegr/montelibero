@@ -17,11 +17,11 @@ import '../models/tx.dart';
 
 class LiquidOracle extends ChangeNotifier {
   final rpc = Client.withBasicAuth(
-      GlobalConfiguration().getValue("uri"),
-      GlobalConfiguration().getValue("port"),
+      GlobalConfiguration().get("host"),
+      GlobalConfiguration().get("port"),
       '1.0',
-      GlobalConfiguration().getValue("user"),
-      GlobalConfiguration().getValue("password"));
+      GlobalConfiguration().get("user"),
+      GlobalConfiguration().get("password"));
 
   ChainInfo? lastChainInfo;
   WalletInfo? lastWalletInfo;
