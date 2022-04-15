@@ -1,7 +1,11 @@
 // ignore_for_file: use_key_in_widget_constructors
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:montelibero/oracles/sidechain_oracle.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:montelibero/models/chain_info.dart';
 import 'package:global_configuration/global_configuration.dart';
@@ -60,12 +64,14 @@ class SettingsScreenState extends State<SettingsScreen> {
       body: Container(
         margin: const EdgeInsets.only(top: 20, left: 10, right: 10),
         child: Center(
-          child: Column(
+          child: Form(
+            key: _formKey,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
-                (liquidOracle.lastChainInfo!.height > 0) ? 'last block: ${liquidOracle.lastChainInfo!.height} updated ${liquidOracle.lastChainInfo!.date}' : "No connection",
+                (liquidOracle.lastChainInfo!.height > 0) ? 'last block: ${liquidOracle.lastChainInfo!.height} updated ${liquidOracle.lastChainInfo!.date}' : "no connection",
                 style: const TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -85,7 +91,15 @@ class SettingsScreenState extends State<SettingsScreen> {
                 // The validator receives the text that the user has entered.
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please, enter correct URI';
+                    return 'can not be empty';
+                  } else {
+                    final uri = Uri.tryParse(value);
+                    final isValid = uri != null &&
+                        uri.scheme.startsWith('http');
+                    if(isValid){
+                      return null;
+                    }
+                    return "please, enter correct uri $value";
                   }
                   return null;
                 },
@@ -101,7 +115,14 @@ class SettingsScreenState extends State<SettingsScreen> {
                 // The validator receives the text that the user has entered.
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please, check host and enter correct port';
+                    return 'can not be empty';
+                  } else {
+                    try {
+                      final port = int.parse(value);
+                      return null;
+                    } catch(_) {
+                      return "please, enter numeric value";
+                    }
                   }
                   return null;
                 },
@@ -117,7 +138,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                 // The validator receives the text that the user has entered.
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please, enter correct user';
+                    return 'can not be empty';
                   }
                   return null;
                 },
@@ -134,12 +155,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                 // The validator receives the text that the user has entered.
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    if(liquidOracle.lastChainInfo!.height < 0){
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("No connection"))
-                      );
-                    }
-                    return 'Please, check user and enter correct password';
+                    return 'can not be empty';
                   }
                   return null;
                 },
@@ -147,40 +163,38 @@ class SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                    GlobalConfiguration().updateValue("host", hostInput.text);
-                    GlobalConfiguration().updateValue("port", int.parse(portInput.text));
-                    GlobalConfiguration().updateValue("user", userInput.text);
-                    GlobalConfiguration().updateValue("password", passwordInput.text);
-                    final result = liquidOracle.reset();
-                    //print("RPC client reset: " + result.toString());
-                  });
-                  /*
-                  liquidOracle.getRawTx(txController.text).then((value) {
+                  if (_formKey.currentState!.validate()) {
                     setState(() {
-                      txController.text = value;
-                      txInfo = 'Received transaction. Press Unblind next';
+                      GlobalConfiguration().updateValue("host", hostInput.text);
+                      GlobalConfiguration().updateValue("port", int.parse(portInput.text));
+                      GlobalConfiguration().updateValue("user", userInput.text);
+                      GlobalConfiguration().updateValue("password", passwordInput.text);
+                      final result = liquidOracle.reset();
+                      //print("RPC client reset: " + result.toString());
                     });
-                  }).catchError((_){
-                    setState(() {
-                      txController.text = "";
-                      txInfo = 'An error occurred while requesting raw tx';
-                    });
-                  });
-                  */
+                  }
                 },
                 child: const Text("Check"),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                  });
+                  final localDirectory = getApplicationDocumentsDirectory();
+                  const configPath = 'config.json';
+                  final file = File(configPath);
+
+                  final settings = jsonEncode(GlobalConfiguration().appConfig);
+                  file.writeAsString(settings);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('saved configuration file')),
+                  );
                 },
                 child: const Text("Save"),
               ),
             ],
           ),
+        ),
         ),
       ),
     );
