@@ -16,12 +16,18 @@ import 'package:intl/intl.dart';
 import '../models/tx.dart';
 
 class LiquidOracle extends ChangeNotifier {
-  final rpc = Client.withBasicAuth(
+
+  var rpc = Client.withBasicAuth(
       GlobalConfiguration().get("host"),
       GlobalConfiguration().get("port"),
       '1.0',
       GlobalConfiguration().get("user"),
       GlobalConfiguration().get("password"));
+
+  var host = GlobalConfiguration().get("host");
+  var port = GlobalConfiguration().get("port");
+  var user = GlobalConfiguration().get("user");
+  var pass = GlobalConfiguration().get("password");
 
   ChainInfo? lastChainInfo;
   WalletInfo? lastWalletInfo;
@@ -37,9 +43,51 @@ class LiquidOracle extends ChangeNotifier {
     });
   }
 
+  reset() {
+    bool result=false;
+    if (host != GlobalConfiguration().get("host") ||
+        port != GlobalConfiguration().get("port") ||
+        user != GlobalConfiguration().get("user") ||
+        pass != GlobalConfiguration().get("password")
+    ) {
+      print("resetting Elements Core settings");
+      final newRPC = Client.withBasicAuth(
+          GlobalConfiguration().get("host"),
+          GlobalConfiguration().get("port"),
+          '1.0',
+          GlobalConfiguration().get("user"),
+          GlobalConfiguration().get("password"),
+      );
+      var response = newRPC.call("getblockchaininfo").then((_){
+        host = GlobalConfiguration().get("host");
+        port = GlobalConfiguration().get("port");
+        user = GlobalConfiguration().get("user");
+        pass = GlobalConfiguration().get("password");
+        rpc = Client.withBasicAuth(host, port, '1.0', user, pass);
+        print("updated Elements Core settings");
+        print("$host $port $user $pass");
+        result = true;
+      }).catchError((_){
+        print("invalid API credentials");
+        GlobalConfiguration().updateValue("host", host);
+        GlobalConfiguration().updateValue("port", port);
+        GlobalConfiguration().updateValue("user", user);
+        GlobalConfiguration().updateValue("password", pass);
+      });
+    }
+    return result;
+  }
+
   getChainData() async {
-    var response = await rpc.call("getblockchaininfo");
-    lastChainInfo = ChainInfo.fromJson(response.result);
+    try {
+      var response = await rpc.call("getblockchaininfo");
+      lastChainInfo = ChainInfo.fromJson(response.result);
+    } catch(err) {
+      print("Can't connect to Elements Core: " + err.toString());
+      lastChainInfo = ChainInfo(
+          date: DateTime.now().toString(),
+          height: -1);
+    }
     //infoString = response.result;
     //print(infoString);
     notifyListeners();
@@ -49,9 +97,8 @@ class LiquidOracle extends ChangeNotifier {
     try {
       print('Awaiting wallet info...');
       var response = await rpc.call("getwalletinfo");
-      print('Received');
       lastWalletInfo = WalletInfo.fromJson(response.result);
-      print(lastWalletInfo!.assets);
+      print("wallet info: ${lastWalletInfo!.assets}");
       notifyListeners();
     } catch (err) {
       print(err);

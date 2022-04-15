@@ -90,7 +90,8 @@ class _NetworkStatus extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'height ${network!.height}\n balance: ${wallet!.assets["bitcoin"]} btc',
+                    ((liquidOracle.lastChainInfo?.height ?? -1) > 0) ?
+                    'height ${network!.height}\n balance: ${wallet!.assets["bitcoin"]} btc' : "No connection",
                     style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,

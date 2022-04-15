@@ -36,8 +36,20 @@ class SettingsScreenState extends State<SettingsScreen> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    hostInput.text = GlobalConfiguration().get("host"); // ?? "http://host:port";
+    portInput.text = GlobalConfiguration().get("port").toString(); // ?? "password";
+    userInput.text = GlobalConfiguration().get("user"); // ?? "user";
+    passwordInput.text = GlobalConfiguration().get("password"); // ?? "password";
+  }
+
+  @override
   Widget build(BuildContext context) {
     final liquidOracle = Provider.of<LiquidOracle>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -53,7 +65,7 @@ class SettingsScreenState extends State<SettingsScreen> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
-                (liquidOracle.lastChainInfo != null) ? 'last block: ${liquidOracle.lastChainInfo!.height} updated ${liquidOracle.lastChainInfo!.date}' : "No connection",
+                (liquidOracle.lastChainInfo!.height > 0) ? 'last block: ${liquidOracle.lastChainInfo!.height} updated ${liquidOracle.lastChainInfo!.date}' : "No connection",
                 style: const TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -122,10 +134,50 @@ class SettingsScreenState extends State<SettingsScreen> {
                 // The validator receives the text that the user has entered.
                 validator: (value) {
                   if (value == null || value.isEmpty) {
+                    if(liquidOracle.lastChainInfo!.height < 0){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("No connection"))
+                      );
+                    }
                     return 'Please, check user and enter correct password';
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    GlobalConfiguration().updateValue("host", hostInput.text);
+                    GlobalConfiguration().updateValue("port", int.parse(portInput.text));
+                    GlobalConfiguration().updateValue("user", userInput.text);
+                    GlobalConfiguration().updateValue("password", passwordInput.text);
+                    final result = liquidOracle.reset();
+                    //print("RPC client reset: " + result.toString());
+                  });
+                  /*
+                  liquidOracle.getRawTx(txController.text).then((value) {
+                    setState(() {
+                      txController.text = value;
+                      txInfo = 'Received transaction. Press Unblind next';
+                    });
+                  }).catchError((_){
+                    setState(() {
+                      txController.text = "";
+                      txInfo = 'An error occurred while requesting raw tx';
+                    });
+                  });
+                  */
+                },
+                child: const Text("Check"),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                  });
+                },
+                child: const Text("Save"),
               ),
             ],
           ),

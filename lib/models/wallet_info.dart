@@ -52,9 +52,9 @@ class WalletInfo {
 
   factory WalletInfo.fromJson(Map<String, dynamic> json) => WalletInfo(
     date: DateTime.now().toString(),
-    name: json['walletname'] == null ? null : json["walletname"],
-    txCount: json['txcount'] == null ? null : json["txcount"],
-    assets: json['balance'] == null ? null : json["balance"],
+    name: json['walletname'] == null ? "none" : json["walletname"],
+    txCount: json['txcount'] == null ? 0 : json["txcount"],
+    assets: json['balance'] == null ? {"bitcoin": 0} : json["balance"],
   );
 
   Map<String, dynamic> toJson() => {"date": date};
