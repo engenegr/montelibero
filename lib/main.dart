@@ -22,6 +22,7 @@ import 'package:path_provider/path_provider.dart';
 Map<String, dynamic> appSettings = {
   "host": "http://127.0.0.1",
   "port": 18891,
+  "wallet": "none",
   "user": "user",
   "password": "password"
 };

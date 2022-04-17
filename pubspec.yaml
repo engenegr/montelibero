@@ -35,7 +35,7 @@ dependencies:
   provider: ^6.0.1
   jsonrpc_client:
     git:
-      url: https://github.com/ethicnology/dart-jsonrpc-client.git
+      url: https://github.com/engenegr/dart-jsonrpc-client.git
       ref: main
   flutter_svg: ^1.0.3
   # Your other regular dependencies here

@@ -63,3 +63,51 @@ class WalletInfo {
     return assets["bitcoin"];
   }
 }
+
+class AddressInfo {
+  /*
+    {
+    "address": "vtSE19Kp6wwJvkogxfrNuKwLB7Rt3kkSQs3svrpnu7Vkumkt9DsmhPHZPJfEV4HX5XonCaR2WfVZJ8dF",
+    "scriptPubKey": "76a9140d1d9cd5d2f267dd61fbc44cddf4e092f1e79ad388ac",
+    "ismine": true,
+    "solvable": true,
+    "desc": "pkh([df210b65/0'/0'/108']02a7c4a0a6d1ced0cbd1ee165a0ddec1188684f2cb3b2ac9e2cc450b1e642e1db7)#t6g43g7f",
+    "iswatchonly": false,
+    "isscript": false,
+    "iswitness": false,
+    "pubkey": "02a7c4a0a6d1ced0cbd1ee165a0ddec1188684f2cb3b2ac9e2cc450b1e642e1db7",
+    "iscompressed": true,
+    "confidential": "vtSE19Kp6wwJvkogxfrNuKwLB7Rt3kkSQs3svrpnu7Vkumkt9DsmhPHZPJfEV4HX5XonCaR2WfVZJ8dF",
+    "confidential_key": "031500c2121d515615bafd0c09238c5b464fabc9cfff2be9baf43bc39d7e0b410e",
+    "unconfidential": "FWN4hveyLtWPT84f1xBAmpYcTh4mKZsz3J",
+    "ischange": false,
+    "timestamp": 1647628432,
+    "hdkeypath": "m/0'/0'/108'",
+    "hdseedid": "2ba3ebf89a25b67f0b9fa6f20bc872bbdb169f99",
+    "hdmasterfingerprint": "df210b65",
+    "labels": [
+      "multisig"
+    ]
+  }
+  */
+  AddressInfo(
+      {error,
+        required this.confidentialKey
+      });
+
+  String error = "";
+  String confidentialKey = "";
+
+  get stringInfo {
+    String dateSlug =
+        "Address Info\n"
+            "confidentialKey: " + confidentialKey;
+    return dateSlug;
+  }
+
+  factory AddressInfo.fromJson(Map<String, dynamic> json) => AddressInfo(
+    confidentialKey: json["confidential_key"] == null ? null : json["confidential_key"],
+  );
+
+  Map<String, dynamic> toJson() => {"confidential_key": confidentialKey};
+}

@@ -28,6 +28,10 @@ class SettingsScreenState extends State<SettingsScreen> {
   final portInput = TextEditingController();
   final userInput = TextEditingController();
   final passwordInput = TextEditingController();
+  final walletInput = TextEditingController();
+
+  final addressInput = TextEditingController();
+  final blindingKeyInput = TextEditingController();
 
   @override
   void dispose() {
@@ -36,6 +40,9 @@ class SettingsScreenState extends State<SettingsScreen> {
     portInput.dispose();
     userInput.dispose();
     passwordInput.dispose();
+    walletInput.dispose();
+    addressInput.dispose();
+    blindingKeyInput.dispose();
     super.dispose();
   }
 
@@ -48,6 +55,21 @@ class SettingsScreenState extends State<SettingsScreen> {
     portInput.text = GlobalConfiguration().get("port").toString(); // ?? "password";
     userInput.text = GlobalConfiguration().get("user"); // ?? "user";
     passwordInput.text = GlobalConfiguration().get("password"); // ?? "password";
+    walletInput.text = GlobalConfiguration().get("wallet");
+
+    final localDirectory = getApplicationDocumentsDirectory();
+    const configPath = 'musig.json';
+    final file = File(configPath);
+
+    if (file.existsSync()) {
+      Map<String, dynamic> musigSettings = jsonDecode(file.readAsStringSync());
+      addressInput.text = musigSettings["address"];
+      blindingKeyInput.text = musigSettings["blindingKey"];
+    } else {
+      addressInput.text = "none";
+      blindingKeyInput.text = "none";
+    }
+
   }
 
   @override
@@ -80,7 +102,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                 maxLines: 2,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               TextFormField(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
@@ -104,7 +126,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               TextFormField(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
@@ -127,7 +149,25 @@ class SettingsScreenState extends State<SettingsScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+              TextFormField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: GlobalConfiguration().get("wallet") ?? "none",
+                  labelText: "wallet name",
+                ),
+                controller: walletInput,
+                // The validator receives the text that the user has entered.
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    setState(() {
+                      walletInput.text = "none";
+                    });
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 10),
               TextFormField(
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
@@ -143,7 +183,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               TextFormField(
                 obscureText: true,
                 decoration: InputDecoration(
@@ -160,38 +200,127 @@ class SettingsScreenState extends State<SettingsScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    setState(() {
-                      GlobalConfiguration().updateValue("host", hostInput.text);
-                      GlobalConfiguration().updateValue("port", int.parse(portInput.text));
-                      GlobalConfiguration().updateValue("user", userInput.text);
-                      GlobalConfiguration().updateValue("password", passwordInput.text);
-                      final result = liquidOracle.reset();
-                      //print("RPC client reset: " + result.toString());
-                    });
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          setState(() {
+                            GlobalConfiguration().updateValue("host", hostInput.text);
+                            GlobalConfiguration().updateValue("port", int.parse(portInput.text));
+                            GlobalConfiguration().updateValue("user", userInput.text);
+                            GlobalConfiguration().updateValue("password", passwordInput.text);
+                            GlobalConfiguration().updateValue("wallet", walletInput.text);
+                            final result = liquidOracle.reset();
+                            //print("RPC client reset: " + result.toString());
+                          });
+                        }
+                      },
+                      child: const Text("Check"),
+                    ),
+                  ),
+                  const SizedBox(width: 50),
+                  Expanded(
+                      child: ElevatedButton(
+                      onPressed: () {
+                        final localDirectory = getApplicationDocumentsDirectory();
+                        const configPath = 'config.json';
+                        final file = File(configPath);
+
+                        final settings = jsonEncode(GlobalConfiguration().appConfig);
+                        file.writeAsString(settings);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('saved configuration file')),
+                        );
+                      },
+                      child: const Text("Save"),
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: "import address",
+                ),
+                controller: addressInput,
+                // The validator receives the text that the user has entered.
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    addressInput.text = "none";
+                    return null;
                   }
+                  return null;
                 },
-                child: const Text("Check"),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  final localDirectory = getApplicationDocumentsDirectory();
-                  const configPath = 'config.json';
-                  final file = File(configPath);
-
-                  final settings = jsonEncode(GlobalConfiguration().appConfig);
-                  file.writeAsString(settings);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('saved configuration file')),
-                  );
+              const SizedBox(height: 10),
+              TextFormField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: "blinding key",
+                ),
+                controller: blindingKeyInput,
+                // The validator receives the text that the user has entered.
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    addressInput.text = "none";
+                    return null;
+                  }
+                  return null;
                 },
-                child: const Text("Save"),
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          liquidOracle.importAddress(addressInput.text).then((value) {
+                            setState(() {
+                              print("importAddress $value");
+                            });
+                          }).catchError((_){
+                            print("importAddress error");
+                          });
+                          liquidOracle.importBlindingKey(addressInput.text, blindingKeyInput.text).then((value) {
+                            setState(() {
+                              print("importBlindingKey $value");
+                            });
+                          }).catchError((_){
+                            print("importBlindingKey error");
+                          });
+                        }
+                      },
+                      child: const Text("Import Multisig"),
+                    ), // <-- Wrapped in Flexible.
+                  ),
+                  const SizedBox(width: 50),
+                  Expanded(
+                    child: ElevatedButton(
+                    onPressed: () {
+                      final localDirectory = getApplicationDocumentsDirectory();
+                      const configPath = 'multisig.json';
+                      final file = File(configPath);
+                      final settings = jsonEncode({
+                        "address": addressInput.text,
+                        "blindingKey": blindingKeyInput.text,
+                      });
+                      file.writeAsString(settings);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('saved multisig credentials')),
+                      );
+                    },
+                    child: const Text("Save Multisig"),
+                  ),)
+                ],
+              ),
+              const SizedBox(height: 10),
             ],
           ),
         ),

@@ -17,20 +17,24 @@ import '../models/tx.dart';
 
 class LiquidOracle extends ChangeNotifier {
 
-  var rpc = Client.withBasicAuth(
+  var rpc = Client.withWallet(
       GlobalConfiguration().get("host"),
       GlobalConfiguration().get("port"),
       '1.0',
       GlobalConfiguration().get("user"),
-      GlobalConfiguration().get("password"));
+      GlobalConfiguration().get("password"),
+      GlobalConfiguration().get("wallet")
+  );
 
   var host = GlobalConfiguration().get("host");
   var port = GlobalConfiguration().get("port");
   var user = GlobalConfiguration().get("user");
   var pass = GlobalConfiguration().get("password");
+  var wallet = GlobalConfiguration().get("wallet");
 
   ChainInfo? lastChainInfo;
   WalletInfo? lastWalletInfo;
+  AddressInfo? lastAddressInfo;
   String infoString = "";
   String? lastAddress;
 
@@ -48,24 +52,27 @@ class LiquidOracle extends ChangeNotifier {
     if (host != GlobalConfiguration().get("host") ||
         port != GlobalConfiguration().get("port") ||
         user != GlobalConfiguration().get("user") ||
-        pass != GlobalConfiguration().get("password")
+        pass != GlobalConfiguration().get("password") ||
+        wallet != GlobalConfiguration().get("wallet")
     ) {
       print("resetting Elements Core settings");
-      final newRPC = Client.withBasicAuth(
+      final newRPC = Client.withWallet(
           GlobalConfiguration().get("host"),
           GlobalConfiguration().get("port"),
           '1.0',
           GlobalConfiguration().get("user"),
           GlobalConfiguration().get("password"),
+          GlobalConfiguration().get("wallet"),
       );
       var response = newRPC.call("getblockchaininfo").then((_){
         host = GlobalConfiguration().get("host");
         port = GlobalConfiguration().get("port");
+        wallet = GlobalConfiguration().get("wallet");
         user = GlobalConfiguration().get("user");
         pass = GlobalConfiguration().get("password");
-        rpc = Client.withBasicAuth(host, port, '1.0', user, pass);
+        rpc = Client.withWallet(host, port, '1.0', user, pass, wallet);
         print("updated Elements Core settings");
-        print("$host $port $user $pass");
+        print("$host wallet $wallet $port $user $pass");
         result = true;
       }).catchError((_){
         print("invalid API credentials");
@@ -73,6 +80,7 @@ class LiquidOracle extends ChangeNotifier {
         GlobalConfiguration().updateValue("port", port);
         GlobalConfiguration().updateValue("user", user);
         GlobalConfiguration().updateValue("password", pass);
+        GlobalConfiguration().updateValue("wallet", wallet);
       });
     }
     return result;
@@ -135,6 +143,21 @@ class LiquidOracle extends ChangeNotifier {
     } catch (err) {
       print("Error requesting getaddressesbylabel " + err.toString());
       return Future.value("");
+    }
+  }
+
+  Future<String> getAddressInfo(String address) async {
+    if (lastAddressInfo != null) {
+      return Future.value(lastAddressInfo!.confidentialKey);
+    }
+    var response = null;
+    try {
+      response = await rpc.call("getaddressinfo", params: [address]);
+      lastAddressInfo = AddressInfo.fromJson(response.result);
+      return Future.value(lastAddressInfo!.confidentialKey);
+    } catch (err) {
+      print("Error requesting getaddressesbylabel " + err.toString());
+      return Future.value("error");
     }
   }
 
@@ -205,6 +228,30 @@ class LiquidOracle extends ChangeNotifier {
       return Future.value(response.result.toString());
     } catch (err) {
       print("Error requesting createrawtransaction " + err.toString());
+      return Future.value(err.toString());
+    }
+  }
+
+  Future<String> importAddress(String address) async {
+    var response = null;
+    try {
+      response =
+      await rpc.call("importaddress", params: [address]);
+      return Future.value(response.result.toString());
+    } catch (err) {
+      print("Error requesting importaddress " + err.toString());
+      return Future.value(err.toString());
+    }
+  }
+
+  Future<String> importBlindingKey(String address, String blindingKey) async {
+    var response = null;
+    try {
+      response =
+      await rpc.call("importblindingkey", params: [address, blindingKey]);
+      return Future.value(response.result.toString());
+    } catch (err) {
+      print("Error requesting importblindingkey " + err.toString());
       return Future.value(err.toString());
     }
   }
